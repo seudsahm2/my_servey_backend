@@ -31,11 +31,26 @@ class StudentSurvey(models.Model):
         ('flexible', 'Flexible'),
     ]
     
+    AGE_RANGE_CHOICES = [
+        ('8-15', '8-15'),
+        ('15-24', '15-24'),
+        ('24-32', '24-32'),
+        ('32-40', '32-40'),
+        ('40+', '40+'),
+    ]
+
     full_name = models.CharField(
         max_length=255,
         blank=False,
         default='',
         help_text="Full name of the student"
+    )
+
+    age_range = models.CharField(
+        max_length=10,
+        choices=AGE_RANGE_CHOICES,
+        default='15-24',
+        help_text="Age range of the student"
     )
 
     # Q0: Phone Number (Identity)
@@ -144,7 +159,29 @@ class TeacherSurvey(models.Model):
         (45, '45 minutes'),
         (60, '60 minutes'),
     ]
+
+    AGE_RANGE_CHOICES = [
+        ('8-15', '8-15'),
+        ('15-24', '15-24'),
+        ('24-32', '24-32'),
+        ('32-40', '32-40'),
+        ('40+', '40+'),
+    ]
     
+    full_name = models.CharField(
+        max_length=255,
+        blank=False,
+        default='',
+        help_text="Full name of the teacher"
+    )
+
+    age_range = models.CharField(
+        max_length=10,
+        choices=AGE_RANGE_CHOICES,
+        default='24-32',
+        help_text="Age range of the teacher"
+    )
+
     # Q0: Phone Number (Identity)
     phone_number = models.CharField(
         max_length=15,

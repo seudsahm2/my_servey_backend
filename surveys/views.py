@@ -95,6 +95,21 @@ def student_analytics(request):
     subjects_data = {}
     for subject in all_subjects:
         subjects_data[subject] = subjects_data.get(subject, 0) + 1
+
+    # Age distribution
+    age_data = StudentSurvey.objects.values('age_range').annotate(
+        count=Count('id')
+    ).order_by('age_range')
+
+    # Age vs Subjects
+    age_subjects = {}
+    for survey in StudentSurvey.objects.all():
+        age = survey.age_range
+        if age not in age_subjects:
+            age_subjects[age] = {}
+        if survey.subjects_of_interest:
+            for subject in survey.subjects_of_interest:
+                age_subjects[age][subject] = age_subjects[age].get(subject, 0) + 1
     
     return Response({
         'total_responses': total_count,
@@ -111,7 +126,9 @@ def student_analytics(request):
             'no': online_no
         },
         'average_price': round(float(avg_price) if avg_price else 0, 2),
-        'subjects_interest': subjects_data
+        'subjects_interest': subjects_data,
+        'age_distribution': list(age_data),
+        'age_subjects_interest': age_subjects
     })
 
 
@@ -155,6 +172,11 @@ def teacher_analytics(request):
     topics_data = {}
     for topic in all_topics:
         topics_data[topic] = topics_data.get(topic, 0) + 1
+
+    # Age distribution
+    age_data = TeacherSurvey.objects.values('age_range').annotate(
+        count=Count('id')
+    ).order_by('age_range')
     
     return Response({
         'total_responses': total_count,
@@ -171,7 +193,8 @@ def teacher_analytics(request):
         'early_access_interest': wants_early,
         'average_students_per_week': round(float(avg_students) if avg_students else 0, 1),
         'average_rate': round(float(avg_rate) if avg_rate else 0, 2),
-        'confident_topics': topics_data
+        'confident_topics': topics_data,
+        'age_distribution': list(age_data)
     })
 
 

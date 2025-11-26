@@ -1,7 +1,21 @@
+# Core Django
 Django==4.2.7
 djangorestframework==3.14.0
 django-cors-headers==4.3.1
 python-decouple==3.8
 
-# Optional: For PostgreSQL/Supabase (uncomment if needed)
-# psycopg[binary]==3.1.18
+# JWT Authentication
+djangorestframework-simplejwt==5.3.1
+
+# Database - PostgreSQL (Required for Render)
+psycopg2-binary==2.9.9
+dj-database-url==2.1.0
+
+# Static Files (Required for Render)
+whitenoise==6.6.0
+
+# Production Server (Required for Render)
+gunicorn==21.2.0
+
+# Security
+django-environ==0.11.2
