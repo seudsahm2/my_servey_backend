@@ -1,5 +1,6 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import api_view
+from rest_framework import viewsets, status, serializers
+from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.db.models import Count, Avg, Q
 from .models import StudentSurvey, TeacherSurvey
@@ -17,6 +18,23 @@ class StudentSurveyViewSet(viewsets.ModelViewSet):
         ip = self.request.META.get('REMOTE_ADDR')
         serializer.save(ip_address=ip)
 
+    @action(detail=False, methods=['get'], url_path='check-phone')
+    def check_phone(self, request):
+        phone = request.query_params.get('phone', '')
+        serializer = self.get_serializer()
+        if not phone:
+            return Response(
+                {'valid': False, 'exists': False, 'error': ['Phone number is required.']},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            normalized = serializer.validate_phone_number(phone)
+        except serializers.ValidationError as exc:  # type: ignore[name-defined]
+            return Response({'valid': False, 'exists': False, 'error': exc.detail}, status=status.HTTP_400_BAD_REQUEST)
+
+        exists = StudentSurvey.objects.filter(phone_number=normalized).exists()
+        return Response({'valid': True, 'exists': exists})
+
 
 class TeacherSurveyViewSet(viewsets.ModelViewSet):
     """ViewSet for teacher survey submissions"""
@@ -31,6 +49,7 @@ class TeacherSurveyViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def student_analytics(request):
     """Get analytics data for student surveys"""
     total_count = StudentSurvey.objects.count()
@@ -72,17 +91,18 @@ def student_analytics(request):
         if survey.subjects_of_interest:
             all_subjects.extend(survey.subjects_of_interest)
     
-    from collections import Counter
-    subject_counts = Counter(all_subjects)
-    subjects_data = [{'subject': k, 'count': v} for k, v in subject_counts.items()]
+    # Count subjects
+    subjects_data = {}
+    for subject in all_subjects:
+        subjects_data[subject] = subjects_data.get(subject, 0) + 1
     
     return Response({
         'total_responses': total_count,
         'experience_distribution': list(experience_data),
-        'session_length_distribution': list(session_length_data),
-        'frequency_distribution': list(frequency_data),
-        'time_preference_distribution': list(time_data),
-        'willingness': {
+        'session_length_preferences': list(session_length_data),
+        'frequency_preferences': list(frequency_data),
+        'time_preferences': list(time_data),
+        'willingness_to_try': {
             'willing': willing_count,
             'not_willing': not_willing_count
         },
@@ -131,19 +151,20 @@ def teacher_analytics(request):
         if survey.confident_topics:
             all_topics.extend(survey.confident_topics)
     
-    from collections import Counter
-    topic_counts = Counter(all_topics)
-    topics_data = [{'topic': k, 'count': v} for k, v in topic_counts.items()]
+    # Count topics
+    topics_data = {}
+    for topic in all_topics:
+        topics_data[topic] = topics_data.get(topic, 0) + 1
     
     return Response({
         'total_responses': total_count,
-        'teaching_background_distribution': list(background_data),
-        'session_length_distribution': list(session_length_data),
+        'background_distribution': list(background_data),
+        'session_length_preferences': list(session_length_data),
         'platform_interest': {
             'would_join': would_join,
             'would_not_join': would_not_join
         },
-        'online_experience': {
+        'online_teaching_experience': {
             'tried': tried_online,
             'not_tried': not_tried_online
         },

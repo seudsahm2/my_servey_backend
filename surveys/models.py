@@ -31,6 +31,13 @@ class StudentSurvey(models.Model):
         ('flexible', 'Flexible'),
     ]
     
+    full_name = models.CharField(
+        max_length=255,
+        blank=False,
+        default='',
+        help_text="Full name of the student"
+    )
+
     # Q0: Phone Number (Identity)
     phone_number = models.CharField(
         max_length=15,
@@ -107,21 +114,15 @@ class StudentSurvey(models.Model):
         blank=True,
         help_text="Why or why not?"
     )
-    
-    # Q11: Desired features
+
     desired_features = models.TextField(
-        help_text="What features would make this platform most useful for you?"
+        blank=True,
+        help_text="What features would you like to see?"
     )
-    
-    # Metadata
+
     submitted_at = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
-    
-    class Meta:
-        ordering = ['-submitted_at']
-        verbose_name = "Student Survey"
-        verbose_name_plural = "Student Surveys"
-    
+
     def __str__(self):
         return f"Student Survey - {self.submitted_at.strftime('%Y-%m-%d %H:%M')}"
 
@@ -224,21 +225,17 @@ class TeacherSurvey(models.Model):
     
     # Q12: Interest in early access
     wants_early_access = models.BooleanField(
-        help_text="Would you like early access to test and teach on this platform?"
+        default=False,
+        help_text="Would you be interested in early access?"
     )
-    early_access_contact = models.EmailField(
+    early_access_contact = models.CharField(
+        max_length=255,
         blank=True,
-        help_text="Email for early access (optional)"
+        help_text="Contact info for early access (if different from phone)"
     )
-    
-    # Metadata
+
     submitted_at = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
-    
-    class Meta:
-        ordering = ['-submitted_at']
-        verbose_name = "Teacher Survey"
-        verbose_name_plural = "Teacher Surveys"
-    
+
     def __str__(self):
         return f"Teacher Survey - {self.submitted_at.strftime('%Y-%m-%d %H:%M')}"
