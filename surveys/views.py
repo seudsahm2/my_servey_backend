@@ -1,6 +1,6 @@
 from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import api_view, permission_classes, action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.db.models import Count, Avg, Q
 from .models import StudentSurvey, TeacherSurvey
@@ -12,13 +12,14 @@ class StudentSurveyViewSet(viewsets.ModelViewSet):
     queryset = StudentSurvey.objects.all()
     serializer_class = StudentSurveySerializer
     http_method_names = ['get', 'post', 'head', 'options']
+    permission_classes = [AllowAny]  # Allow public access for survey submissions
     
     def perform_create(self, serializer):
         # Capture IP address
         ip = self.request.META.get('REMOTE_ADDR')
         serializer.save(ip_address=ip)
 
-    @action(detail=False, methods=['get'], url_path='check-phone')
+    @action(detail=False, methods=['get'], url_path='check-phone', permission_classes=[AllowAny])
     def check_phone(self, request):
         phone = request.query_params.get('phone', '')
         serializer = self.get_serializer()
@@ -41,12 +42,29 @@ class TeacherSurveyViewSet(viewsets.ModelViewSet):
     queryset = TeacherSurvey.objects.all()
     serializer_class = TeacherSurveySerializer
     http_method_names = ['get', 'post', 'head', 'options']
+    permission_classes = [AllowAny]  # Allow public access for survey submissions
     
     def perform_create(self, serializer):
         # Capture IP address
         ip = self.request.META.get('REMOTE_ADDR')
         serializer.save(ip_address=ip)
 
+    @action(detail=False, methods=['get'], url_path='check-phone', permission_classes=[AllowAny])
+    def check_phone(self, request):
+        phone = request.query_params.get('phone', '')
+        serializer = self.get_serializer()
+        if not phone:
+            return Response(
+                {'valid': False, 'exists': False, 'error': ['Phone number is required.']},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            normalized = serializer.validate_phone_number(phone)
+        except serializers.ValidationError as exc:  # type: ignore[name-defined]
+            return Response({'valid': False, 'exists': False, 'error': exc.detail}, status=status.HTTP_400_BAD_REQUEST)
+
+        exists = TeacherSurvey.objects.filter(phone_number=normalized).exists()
+        return Response({'valid': True, 'exists': exists})
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
