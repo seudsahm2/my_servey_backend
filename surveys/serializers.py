@@ -10,6 +10,7 @@ class StudentSurveySerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'full_name',
+            'age_range',
             'phone_number',
             'quran_experience',
             'taken_online_lessons',
@@ -79,6 +80,8 @@ class TeacherSurveySerializer(serializers.ModelSerializer):
         model = TeacherSurvey
         fields = [
             'id',
+            'full_name',
+            'age_range',
             'phone_number',
             'teaching_background',
             'teaching_background_details',
@@ -99,6 +102,14 @@ class TeacherSurveySerializer(serializers.ModelSerializer):
             'ip_address',
         ]
         read_only_fields = ['id', 'submitted_at', 'ip_address']
+
+    def validate_full_name(self, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Full name is required.")
+        if len(value) < 3:
+            raise serializers.ValidationError("Full name must be at least 3 characters long.")
+        return value
 
     def validate_phone_number(self, value: str) -> str:
         value = value.strip()
