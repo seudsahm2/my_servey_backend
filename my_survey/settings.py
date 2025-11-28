@@ -194,3 +194,62 @@ if not DEBUG:
     
     # Trust Render proxy headers
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Logging Configuration - Comprehensive debugging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {asctime} {name} {module}.{funcName}:{lineno} - {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+        'simple': {
+            'format': '[{levelname}] {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        # Django request logging
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+        # Survey app logging
+        'surveys': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        # REST Framework logging
+        'rest_framework': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        # Authentication logging
+        'django.contrib.auth': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
+
+print(f"[SETTINGS] DEBUG={DEBUG}")
+print(f"[SETTINGS] ALLOWED_HOSTS={ALLOWED_HOSTS}")
+print(f"[SETTINGS] CORS_ALLOWED_ORIGINS={CORS_ALLOWED_ORIGINS}")
+print(f"[SETTINGS] REST_FRAMEWORK DEFAULT_PERMISSION_CLASSES={REST_FRAMEWORK.get('DEFAULT_PERMISSION_CLASSES')}")
+print(f"[SETTINGS] REST_FRAMEWORK DEFAULT_AUTHENTICATION_CLASSES={REST_FRAMEWORK.get('DEFAULT_AUTHENTICATION_CLASSES')}")

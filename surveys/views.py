@@ -5,7 +5,10 @@ from rest_framework.response import Response
 from django.db.models import Count, Avg, Q
 from .models import StudentSurvey, TeacherSurvey
 from .serializers import StudentSurveySerializer, TeacherSurveySerializer
+import logging
 
+# Initialize logger for detailed debugging
+logger = logging.getLogger('surveys')
 
 class StudentSurveyViewSet(viewsets.ModelViewSet):
     """ViewSet for student survey submissions"""
@@ -21,19 +24,30 @@ class StudentSurveyViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='check-phone', permission_classes=[AllowAny])
     def check_phone(self, request):
+        logger.info(f"[STUDENT_CHECK_PHONE] Endpoint called")
+        logger.debug(f"[STUDENT_CHECK_PHONE] Headers: {dict(request.headers)}")
+        logger.debug(f"[STUDENT_CHECK_PHONE] User: {request.user}, Authenticated: {request.user.is_authenticated}")
+        logger.debug(f"[STUDENT_CHECK_PHONE] Permission classes: {self.permission_classes}")
+        
         phone = request.query_params.get('phone', '')
+        logger.info(f"[STUDENT_CHECK_PHONE] Phone parameter: {phone}")
+        
         serializer = self.get_serializer()
         if not phone:
+            logger.warning("[STUDENT_CHECK_PHONE] Phone number missing")
             return Response(
                 {'valid': False, 'exists': False, 'error': ['Phone number is required.']},
                 status=status.HTTP_400_BAD_REQUEST
             )
         try:
             normalized = serializer.validate_phone_number(phone)
+            logger.debug(f"[STUDENT_CHECK_PHONE] Normalized phone: {normalized}")
         except serializers.ValidationError as exc:  # type: ignore[name-defined]
+            logger.warning(f"[STUDENT_CHECK_PHONE] Validation error: {exc.detail}")
             return Response({'valid': False, 'exists': False, 'error': exc.detail}, status=status.HTTP_400_BAD_REQUEST)
 
         exists = StudentSurvey.objects.filter(phone_number=normalized).exists()
+        logger.info(f"[STUDENT_CHECK_PHONE] Phone exists: {exists}")
         return Response({'valid': True, 'exists': exists})
 
 
@@ -51,26 +65,43 @@ class TeacherSurveyViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='check-phone', permission_classes=[AllowAny])
     def check_phone(self, request):
+        logger.info(f"[TEACHER_CHECK_PHONE] Endpoint called")
+        logger.debug(f"[TEACHER_CHECK_PHONE] Headers: {dict(request.headers)}")
+        logger.debug(f"[TEACHER_CHECK_PHONE] User: {request.user}, Authenticated: {request.user.is_authenticated}")
+        logger.debug(f"[TEACHER_CHECK_PHONE] Permission classes: {self.permission_classes}")
+        
         phone = request.query_params.get('phone', '')
+        logger.info(f"[TEACHER_CHECK_PHONE] Phone parameter: {phone}")
+        
         serializer = self.get_serializer()
         if not phone:
+            logger.warning("[TEACHER_CHECK_PHONE] Phone number missing")
             return Response(
                 {'valid': False, 'exists': False, 'error': ['Phone number is required.']},
                 status=status.HTTP_400_BAD_REQUEST
             )
         try:
             normalized = serializer.validate_phone_number(phone)
+            logger.debug(f"[TEACHER_CHECK_PHONE] Normalized phone: {normalized}")
         except serializers.ValidationError as exc:  # type: ignore[name-defined]
+            logger.warning(f"[TEACHER_CHECK_PHONE] Validation error: {exc.detail}")
             return Response({'valid': False, 'exists': False, 'error': exc.detail}, status=status.HTTP_400_BAD_REQUEST)
 
         exists = TeacherSurvey.objects.filter(phone_number=normalized).exists()
+        logger.info(f"[TEACHER_CHECK_PHONE] Phone exists: {exists}")
         return Response({'valid': True, 'exists': exists})
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def student_analytics(request):
     """Get analytics data for student surveys"""
+    logger.info(f"[STUDENT_ANALYTICS] Endpoint called")
+    logger.debug(f"[STUDENT_ANALYTICS] Headers: {dict(request.headers)}")
+    logger.debug(f"[STUDENT_ANALYTICS] User: {request.user}, Authenticated: {request.user.is_authenticated}")
+    logger.debug(f"[STUDENT_ANALYTICS] Permission decorators: IsAuthenticated")
+    
     total_count = StudentSurvey.objects.count()
+    logger.info(f"[STUDENT_ANALYTICS] Total student surveys: {total_count}")
     
     # Experience level distribution
     experience_data = StudentSurvey.objects.values('quran_experience').annotate(
@@ -153,7 +184,13 @@ def student_analytics(request):
 @api_view(['GET'])
 def teacher_analytics(request):
     """Get analytics data for teacher surveys"""
+    logger.info(f"[TEACHER_ANALYTICS] Endpoint called")
+    logger.debug(f"[TEACHER_ANALYTICS] Headers: {dict(request.headers)}")
+    logger.debug(f"[TEACHER_ANALYTICS] User: {request.user}, Authenticated: {request.user.is_authenticated}")
+    logger.debug(f"[TEACHER_ANALYTICS] Permission decorators: NONE (missing @permission_classes)")
+    
     total_count = TeacherSurvey.objects.count()
+    logger.info(f"[TEACHER_ANALYTICS] Total teacher surveys: {total_count}")
     
     # Teaching background distribution
     background_data = TeacherSurvey.objects.values('teaching_background').annotate(
@@ -219,8 +256,14 @@ def teacher_analytics(request):
 @api_view(['GET'])
 def analytics_summary(request):
     """Get overall summary of both surveys"""
+    logger.info(f"[ANALYTICS_SUMMARY] Endpoint called")
+    logger.debug(f"[ANALYTICS_SUMMARY] Headers: {dict(request.headers)}")
+    logger.debug(f"[ANALYTICS_SUMMARY] User: {request.user}, Authenticated: {request.user.is_authenticated}")
+    logger.debug(f"[ANALYTICS_SUMMARY] Permission decorators: NONE (missing @permission_classes)")
+    
     student_count = StudentSurvey.objects.count()
     teacher_count = TeacherSurvey.objects.count()
+    logger.info(f"[ANALYTICS_SUMMARY] Student count: {student_count}, Teacher count: {teacher_count}")
     
     last_student = StudentSurvey.objects.order_by('-submitted_at').first()
     last_teacher = TeacherSurvey.objects.order_by('-submitted_at').first()
