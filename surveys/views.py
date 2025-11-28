@@ -16,6 +16,7 @@ class StudentSurveyViewSet(viewsets.ModelViewSet):
     serializer_class = StudentSurveySerializer
     http_method_names = ['get', 'post', 'head', 'options']
     permission_classes = [AllowAny]  # Allow public access for survey submissions
+    authentication_classes = []  # Disable JWT authentication - surveys are public!
     
     def perform_create(self, serializer):
         # Capture IP address
@@ -57,6 +58,7 @@ class TeacherSurveyViewSet(viewsets.ModelViewSet):
     serializer_class = TeacherSurveySerializer
     http_method_names = ['get', 'post', 'head', 'options']
     permission_classes = [AllowAny]  # Allow public access for survey submissions
+    authentication_classes = []  # Disable JWT authentication - surveys are public!
     
     def perform_create(self, serializer):
         # Capture IP address
