@@ -1,10 +1,8 @@
 from rest_framework import serializers
-from .models import StudentSurvey, TeacherSurvey
+from .models import StudentSurvey, TeacherSurvey, SurveyQuestion
 
 
 class StudentSurveySerializer(serializers.ModelSerializer):
-    """Serializer for StudentSurvey model"""
-
     class Meta:
         model = StudentSurvey
         fields = [
@@ -12,6 +10,7 @@ class StudentSurveySerializer(serializers.ModelSerializer):
             'full_name',
             'age_range',
             'phone_number',
+            'gender',
             'quran_experience',
             'taken_online_lessons',
             'online_lessons_reason',
@@ -25,6 +24,7 @@ class StudentSurveySerializer(serializers.ModelSerializer):
             'willing_to_try',
             'willing_to_try_reason',
             'desired_features',
+            'dynamic_responses',
             'submitted_at',
             'ip_address',
         ]
@@ -83,6 +83,7 @@ class TeacherSurveySerializer(serializers.ModelSerializer):
             'full_name',
             'age_range',
             'phone_number',
+            'gender',
             'teaching_background',
             'teaching_background_details',
             'tried_online_teaching',
@@ -98,6 +99,7 @@ class TeacherSurveySerializer(serializers.ModelSerializer):
             'feedback_preferences',
             'wants_early_access',
             'early_access_contact',
+            'dynamic_responses',
             'submitted_at',
             'ip_address',
         ]
@@ -145,3 +147,9 @@ class TeacherSurveySerializer(serializers.ModelSerializer):
         if value < 0:
             raise serializers.ValidationError("Rate must be a positive number")
         return value
+
+
+class SurveyQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SurveyQuestion
+        fields = '__all__'

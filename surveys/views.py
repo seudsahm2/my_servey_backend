@@ -1,14 +1,16 @@
-from rest_framework import viewsets, status, serializers
-from rest_framework.decorators import api_view, permission_classes, action
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import viewsets, status
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
-from django.db.models import Count, Avg, Q
-from .models import StudentSurvey, TeacherSurvey
-from .serializers import StudentSurveySerializer, TeacherSurveySerializer
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.db.models import Count, Q, Avg
+from .models import StudentSurvey, TeacherSurvey, SurveyQuestion
+from .serializers import StudentSurveySerializer, TeacherSurveySerializer, SurveyQuestionSerializer
+from .defaults import DEFAULT_STUDENT_QUESTIONS, DEFAULT_TEACHER_QUESTIONS
+from rest_framework import serializers
 import logging
 
-# Initialize logger for detailed debugging
-logger = logging.getLogger('surveys')
+logger = logging.getLogger(__name__)
+
 
 class StudentSurveyViewSet(viewsets.ModelViewSet):
     """ViewSet for student survey submissions"""
@@ -92,6 +94,52 @@ class TeacherSurveyViewSet(viewsets.ModelViewSet):
         exists = TeacherSurvey.objects.filter(phone_number=normalized).exists()
         logger.info(f"[TEACHER_CHECK_PHONE] Phone exists: {exists}")
         return Response({'valid': True, 'exists': exists})
+
+
+class SurveyQuestionViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing survey questions"""
+    queryset = SurveyQuestion.objects.all()
+    serializer_class = SurveyQuestionSerializer
+    filterset_fields = ['survey_type', 'section', 'is_active']
+    permission_classes = [AllowAny]  # You can change this based on your requirements
+
+    @action(detail=False, methods=['post'])
+    def reset(self, request):
+        """Reset questions to default for a specific survey type"""
+        survey_type = request.data.get('survey_type')
+        if survey_type not in ['student', 'teacher']:
+            return Response(
+                {'error': 'Invalid or missing survey_type. Must be "student" or "teacher".'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Delete existing questions for this type
+        SurveyQuestion.objects.filter(survey_type=survey_type).delete()
+
+        # Load defaults
+        defaults = DEFAULT_STUDENT_QUESTIONS if survey_type == 'student' else DEFAULT_TEACHER_QUESTIONS
+        
+        created_count = 0
+        for section, questions in defaults.items():
+            for q_data in questions:
+                SurveyQuestion.objects.create(
+                    survey_type=survey_type,
+                    section=section,
+                    identifier=q_data['identifier'],
+                    text_en=q_data['text_en'],
+                    text_ar=q_data['text_ar'],
+                    question_type=q_data.get('type', 'choice'),
+                    options_en=q_data.get('options_en', []),
+                    options_ar=q_data.get('options_ar', []),
+                    order=created_count
+                )
+                created_count += 1
+
+        return Response({
+            'message': f'Reset {created_count} questions for {survey_type} survey',
+            'count': created_count
+        }, status=status.HTTP_200_OK)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
